@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin
+Disallow: /api/admin
+Allow: /
+Allow: /products
+Allow: /about
+Allow: /contact
+
+Sitemap: https://srisenthoorafancy.com/sitemap.xml
