@@ -1,5 +1,11 @@
 import axios from 'axios';
 
+// Support Render/cloud backend URL when frontend is hosted on Vercel
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+if (API_BASE_URL) {
+  axios.defaults.baseURL = API_BASE_URL;
+}
+
 // Response interceptor to handle expired or invalid admin sessions
 axios.interceptors.response.use(
   (response) => response,
