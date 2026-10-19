@@ -3,7 +3,7 @@ import { MapPin, Phone, Mail, Clock, ShieldCheck, Heart, Sparkles, MessageCircle
 import { useCompany } from '../../context/CompanyContext';
 
 export default function Footer() {
-  const { companyDetails } = useCompany();
+  const { companyDetails, getWhatsAppUrl } = useCompany();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -66,9 +66,7 @@ export default function Footer() {
             </p>
             <div className="pt-2">
               <a
-                href={`https://wa.me/${companyDetails.contact.whatsappRaw}?text=${encodeURIComponent(
-                  companyDetails.contact.whatsappMessage
-                )}`}
+                href={getWhatsAppUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition-colors shadow-xs"
@@ -177,7 +175,7 @@ export default function Footer() {
         {/* Bottom Copyright */}
         <div className="mt-8 pt-6 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500 dark:text-stone-400">
           <p className="m-0">
-            © {currentYear} {companyDetails.shopName}. All Rights Reserved. Product Showcase Only.
+            © {currentYear} {companyDetails.shopName}. All Rights Reserved.
           </p>
           <p className="m-0 flex items-center gap-1 text-[11px]">
             Crafted by <a href="https://myself-murali.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-rose-600 dark:hover:text-rose-400 text-rose-600 dark:text-rose-400 font-bold">Murali</a>

@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { Package, Search, Sparkles, PlusCircle, RefreshCw } from 'lucide-react';
 import { inventoryApi } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
-import companyDetails from '../../config/companyDetails';
+import { useCompany } from '../../context/CompanyContext';
 import ImageWithFallback from '../../components/common/ImageWithFallback';
 
 export default function AdminProducts() {
+  const { companyDetails } = useCompany();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

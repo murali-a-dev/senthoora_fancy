@@ -29,20 +29,63 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:3001',
-  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  'http://127.0.0.1:3001',
+  ...(process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map((u) => u.trim())
+    : []),
 ];
+
+const isOriginAllowed = (origin) => {
+  // Allow requests with no origin (like mobile apps, curl, same-origin)
+  if (!origin) return true;
+
+  // In development, allow all origins (support LAN testing with --host, mobile testing, etc.)
+  if (process.env.NODE_ENV !== 'production') return true;
+
+  // Explicit whitelist match
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+
+  // Allow standard cloud hosting domains
+  if (
+    origin.endsWith('.vercel.app') ||
+    origin.endsWith('.onrender.com') ||
+    origin.endsWith('.netlify.app') ||
+    origin.endsWith('.railway.app')
+  ) {
+    return true;
+  }
+
+  // Allow localhost and 127.0.0.1 on any port
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    return true;
+  }
+
+  // Allow local LAN IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) on any port
+  if (
+    /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(
+      origin
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+};
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (isOriginAllowed(origin)) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
+    optionsSuccessStatus: 200,
   })
 );
+
+app.options('*', cors());
 
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));

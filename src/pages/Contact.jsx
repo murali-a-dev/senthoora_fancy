@@ -5,7 +5,7 @@ import { inquiryApi } from '../api/client';
 import { useToast } from '../context/ToastContext';
 
 export default function Contact() {
-  const { companyDetails } = useCompany();
+  const { companyDetails, getWhatsAppUrl } = useCompany();
   const { showSuccess, showError } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -107,9 +107,7 @@ export default function Contact() {
             </div>
             <div>
               <a
-                href={`https://wa.me/${companyDetails.contact.whatsappRaw}?text=${encodeURIComponent(
-                  companyDetails.contact.whatsappMessage
-                )}`}
+                href={getWhatsAppUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800"

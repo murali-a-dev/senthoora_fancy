@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { inventoryApi, uploadApi } from '../../api/client';
 import { useToast } from '../../context/ToastContext';
-import companyDetails from '../../config/companyDetails';
+import { useCompany } from '../../context/CompanyContext';
 import Modal from '../../components/common/Modal';
 import ImageWithFallback from '../../components/common/ImageWithFallback';
 
@@ -66,6 +66,7 @@ const compressImage = (file, maxDimension = 1200, quality = 0.85) => {
 };
 
 export default function AdminInventory() {
+  const { companyDetails } = useCompany();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

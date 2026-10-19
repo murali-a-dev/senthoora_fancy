@@ -1,7 +1,7 @@
 {
   "name": "sri-senthoora-fancy-store",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Modern Product Showcase for Sri Senthoora Fancy Store",
   "scripts": {

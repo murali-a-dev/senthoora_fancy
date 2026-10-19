@@ -818,7 +818,7 @@ export default function AdminAbout() {
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50 active:scale-95"
               >
                 <Save className="w-4 h-4" />
-                <span>{saving ? 'Saving to Firebase...' : 'Save All Details to Firebase'}</span>
+                <span>{saving ? 'Saving...' : 'Save All Details'}</span>
               </button>
             </div>
           </div>

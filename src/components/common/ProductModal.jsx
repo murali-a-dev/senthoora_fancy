@@ -4,7 +4,7 @@ import Modal from './Modal';
 import ImageWithFallback from './ImageWithFallback';
 
 export default function ProductModal({ product, onClose }) {
-  const { companyDetails } = useCompany();
+  const { companyDetails, getProductInquiryUrl } = useCompany();
   if (!product) return null;
 
   const { name, photo, image, rate, rateDisplay, category, badge, description, tags, stockStatus } = product;
@@ -12,12 +12,7 @@ export default function ProductModal({ product, onClose }) {
   const formattedRate = rateDisplay || (rate ? `₹${Number(rate).toLocaleString('en-IN')}` : 'Price on Request');
 
   const handleWhatsAppInquiry = () => {
-    const msg = `Hello Sri Senthoora Fancy Store, I am inquiring about "${name}" showcased at ${formattedRate}. Can you confirm availability and sizes at your showroom?`;
-    window.open(
-      `https://wa.me/${companyDetails.contact.whatsappRaw}?text=${encodeURIComponent(msg)}`,
-      '_blank',
-      'noopener,noreferrer'
-    );
+    window.open(getProductInquiryUrl(product), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -89,7 +84,7 @@ export default function ProductModal({ product, onClose }) {
                 About this Product
               </h3>
               <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed m-0">
-                {description || 'Visit Sri Senthoora Fancy Store to experience this exquisite piece in person.'}
+                {description || `Visit ${companyDetails?.shopName || 'Sri Senthoora Fancy Store'} to experience this exquisite piece in person.`}
               </p>
             </div>
 
@@ -122,11 +117,11 @@ export default function ProductModal({ product, onClose }) {
 
             <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 px-1">
               <a
-                href={`tel:${companyDetails.contact.primaryPhoneRaw}`}
+                href={`tel:${companyDetails?.contact?.primaryPhoneRaw || (companyDetails?.contact?.primaryPhone || '').replace(/\D/g, '')}`}
                 className="flex items-center gap-1.5 hover:text-stone-900 dark:hover:text-stone-100 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5 text-rose-500" />
-                <span>Call: {companyDetails.contact.primaryPhone}</span>
+                <span>Call: {companyDetails?.contact?.primaryPhone || 'Showroom'}</span>
               </a>
               <span className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" />

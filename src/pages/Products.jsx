@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Sparkles, RefreshCw, AlertCircle, X } from 'lucide-react';
-import companyDetails from '../config/companyDetails';
 import { inventoryApi } from '../api/client';
 import ProductCard from '../components/common/ProductCard';
 import ProductModal from '../components/common/ProductModal';

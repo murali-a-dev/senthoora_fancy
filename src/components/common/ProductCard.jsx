@@ -1,20 +1,16 @@
 import { Eye, Sparkles, MessageCircle } from 'lucide-react';
-import companyDetails from '../../config/companyDetails';
+import { useCompany } from '../../context/CompanyContext';
 import ImageWithFallback from './ImageWithFallback';
 
 export default function ProductCard({ product, onQuickView }) {
+  const { companyDetails, getProductInquiryUrl } = useCompany();
   const { name, photo, image, rate, rateDisplay, category, badge, description, stockStatus } = product;
   const displayImage = photo || image || 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80';
   const formattedRate = rateDisplay || (rate ? `₹${Number(rate).toLocaleString('en-IN')}` : 'Price on Request');
 
   const handleWhatsAppInquiry = (e) => {
     e.stopPropagation();
-    const msg = `Hello Sri Senthoora Fancy Store, I am inquiring about "${name}" showcased at ${formattedRate}. Is this currently available in your showroom?`;
-    window.open(
-      `https://wa.me/${companyDetails.contact.whatsappRaw}?text=${encodeURIComponent(msg)}`,
-      '_blank',
-      'noopener,noreferrer'
-    );
+    window.open(getProductInquiryUrl(product), '_blank', 'noopener,noreferrer');
   };
 
   const handleKeyDown = (e) => {
@@ -81,7 +77,7 @@ export default function ProductCard({ product, onQuickView }) {
           </h3>
 
           <p className="text-xs text-stone-600 dark:text-stone-400 line-clamp-2 mt-1 leading-relaxed">
-            {description || 'Visit Sri Senthoora Fancy Store to experience this exquisite piece in person.'}
+            {description || `Visit ${companyDetails?.shopName || 'Sri Senthoora Fancy Store'} to experience this exquisite piece in person.`}
           </p>
         </div>
 

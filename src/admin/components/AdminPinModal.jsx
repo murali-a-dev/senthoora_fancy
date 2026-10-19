@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Lock, ShieldAlert, ArrowRight, Home } from 'lucide-react';
 import { useAdminAuth } from '../../context/AdminAuthContext';
-import companyDetails from '../../config/companyDetails';
+import { useCompany } from '../../context/CompanyContext';
 
 export default function AdminPinModal({ isOpen, onSuccess }) {
+  const { companyDetails } = useCompany();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const { login, loading } = useAdminAuth();

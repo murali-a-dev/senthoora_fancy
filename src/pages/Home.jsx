@@ -31,7 +31,7 @@ const CATEGORY_ICON_MAP = {
 };
 
 export default function Home() {
-  const { companyDetails } = useCompany();
+  const { companyDetails, getWhatsAppUrl } = useCompany();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -103,9 +103,7 @@ export default function Home() {
                 </Link>
 
                 <a
-                  href={`https://wa.me/${companyDetails.contact.whatsappRaw}?text=${encodeURIComponent(
-                    companyDetails.contact.whatsappMessage
-                  )}`}
+                  href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl text-xs sm:text-sm font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-xs"

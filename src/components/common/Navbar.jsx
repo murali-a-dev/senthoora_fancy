@@ -5,7 +5,7 @@ import { useCompany } from '../../context/CompanyContext';
 import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
-  const { companyDetails } = useCompany();
+  const { companyDetails, getWhatsAppUrl } = useCompany();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
@@ -38,11 +38,10 @@ export default function Navbar() {
       </a>
 
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-300 ${
-          scrolled
+        className={`sticky top-0 z-40 w-full transition-all duration-300 ${scrolled
             ? 'glass-nav shadow-xs'
             : 'bg-stone-50/95 dark:bg-stone-950/90 backdrop-blur-md border-b border-rose-100/70 dark:border-stone-800'
-        }`}
+          }`}
       >
         {/* Top Mini Announcement Bar */}
         <div className="bg-gradient-to-r from-rose-700 via-rose-600 to-rose-700 text-white text-[11px] sm:text-xs py-1.5 px-4 font-medium">
@@ -50,14 +49,14 @@ export default function Navbar() {
             <div className="flex items-center gap-2 truncate">
               <span className="flex h-2 w-2 rounded-full bg-amber-300 animate-ping shrink-0" aria-hidden="true"></span>
               <span className="font-semibold tracking-wide truncate">
-                Special Bridal Bangles & 1-Gram Antique Jewelry Showcase
+                Special Bridal Bangles & 1-Gram Antique Jewelry
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-4 text-rose-50 shrink-0">
               <a
                 href={`tel:${companyDetails.contact.primaryPhoneRaw}`}
                 className="hover:text-white transition-colors flex items-center gap-1"
-                aria-label={`Call showroom at ${companyDetails.contact.primaryPhone}`}
+                aria-label={`Call our shop at ${companyDetails.contact.primaryPhone}`}
               >
                 <Phone className="w-3 h-3" />
                 <span>{companyDetails.contact.primaryPhone}</span>
@@ -89,7 +88,7 @@ export default function Navbar() {
                   {companyDetails.shopName}
                 </span>
                 <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400 tracking-wider">
-                  {companyDetails.shopNameTamil} • Showcase
+                  {companyDetails.shopNameTamil}
                 </span>
               </div>
             </Link>
@@ -102,10 +101,9 @@ export default function Navbar() {
                   to={to}
                   end={end}
                   className={({ isActive }) =>
-                    `px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                      isActive
-                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/70 dark:border-rose-900/50 shadow-xs'
-                        : 'text-stone-700 dark:text-stone-300 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-900/60'
+                    `px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${isActive
+                      ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/70 dark:border-rose-900/50 shadow-xs'
+                      : 'text-stone-700 dark:text-stone-300 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-900/60'
                     }`
                   }
                 >
@@ -119,12 +117,10 @@ export default function Navbar() {
               <ThemeToggle />
 
               <a
-                href={`https://wa.me/${companyDetails.contact.whatsappRaw}?text=${encodeURIComponent(
-                  companyDetails.contact.whatsappMessage
-                )}`}
+                href={getWhatsAppUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Inquire on WhatsApp about showroom products"
+                aria-label="Inquire on WhatsApp about our products"
                 className="hidden lg:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shadow-xs"
               >
                 <span>WhatsApp Inquiry</span>
@@ -203,10 +199,9 @@ export default function Navbar() {
                     to={to}
                     end={end}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                        isActive
-                          ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-900'
-                          : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800'
+                      `flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-900'
+                        : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800'
                       }`
                     }
                   >
@@ -219,9 +214,7 @@ export default function Navbar() {
 
             <div className="pt-6 border-t border-stone-100 dark:border-stone-800 space-y-3">
               <a
-                href={`https://wa.me/${companyDetails.contact.whatsappRaw}?text=${encodeURIComponent(
-                  companyDetails.contact.whatsappMessage
-                )}`}
+                href={getWhatsAppUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800"
