@@ -1,86 +1,90 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
+/**
+ * Accessible Modal — focus-trapped, Esc-closable, scroll-locked
+ */
 export default function Modal({
   isOpen,
   onClose,
-  title,
-  subtitle,
   children,
   maxWidthClass = 'max-w-2xl',
+  ariaLabelId,
+  title,
   showCloseButton = true,
-  ariaLabelId = 'modal-dialog-title',
 }) {
-  const modalRef = useRef(null);
+  const panelRef = useRef(null);
+  const previousFocusRef = useRef(null);
 
+  // Lock body scroll + save focused element
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement;
+      document.body.style.overflow = 'hidden';
+      // Focus first focusable element
+      setTimeout(() => {
+        const focusable = panelRef.current?.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable && focusable.length > 0) focusable[0].focus();
+      }, 60);
+    } else {
+      document.body.style.overflow = '';
+      previousFocusRef.current?.focus?.();
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  // Esc key + focus trap
   useEffect(() => {
     if (!isOpen) return;
-
-    // Lock body scroll
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    // Handle Escape key
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && onClose) {
-        onClose();
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const focusable = panelRef.current?.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
-
-    // Focus modal container
-    if (modalRef.current) {
-      modalRef.current.focus();
-    }
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && onClose) {
-          onClose();
-        }
-      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={ariaLabelId}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-fade-in"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? ariaLabelId : undefined}
-        tabIndex={-1}
-        className={`relative bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl ${maxWidthClass} w-full overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 my-auto max-h-[90vh] flex flex-col focus:outline-none`}
+        ref={panelRef}
+        className={`relative w-full ${maxWidthClass} bg-white dark:bg-[#1a1122] border border-[var(--color-border)] rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up max-h-[92vh] sm:max-h-[88vh] overflow-hidden flex flex-col`}
       >
-        {/* Header if title provided */}
+        {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 dark:border-stone-800 shrink-0">
-            <div>
-              {title && (
-                <h3 id={ariaLabelId} className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100 m-0">
-                  {title}
-                </h3>
-              )}
-              {subtitle && (
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5 m-0">
-                  {subtitle}
-                </p>
-              )}
-            </div>
-
+          <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--color-border-subtle)] shrink-0">
+            {title && (
+              <h2 id={ariaLabelId} className="font-serif text-lg font-bold text-[var(--color-text-main)] m-0">
+                {title}
+              </h2>
+            )}
             {showCloseButton && (
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Close dialog"
-                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+                aria-label="Close modal"
+                className="ml-auto p-2 rounded-xl text-[var(--color-text-light)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-bg-subtle)] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -88,8 +92,8 @@ export default function Modal({
           </div>
         )}
 
-        {/* Content Body with accessible scrolling */}
-        <div className="p-6 overflow-y-auto flex-1">
+        {/* Body — scrollable */}
+        <div className="overflow-y-auto flex-1 p-6">
           {children}
         </div>
       </div>

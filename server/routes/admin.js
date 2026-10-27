@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createSession, verifySession, destroySession, requireAdmin } from '../middleware/auth.js';
+import { createSession, verifySession, destroySession } from '../middleware/auth.js';
 
 const router = Router();
 

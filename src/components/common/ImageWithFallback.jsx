@@ -1,48 +1,53 @@
 import { useState } from 'react';
-import { Sparkles, ImageOff } from 'lucide-react';
+import { ImageOff } from 'lucide-react';
+
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=75';
 
 export default function ImageWithFallback({
   src,
-  alt = 'Sri Senthoora Showcase Product',
+  alt = '',
   className = '',
-  aspectRatioClass = 'aspect-4/3',
-  loading = 'lazy',
+  aspectRatioClass = 'aspect-square',
+  objectFit = 'object-cover',
 }) {
-  const [hasError, setHasError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [status, setStatus] = useState('loading'); // 'loading' | 'loaded' | 'error'
+
+  const imgSrc = src && src.trim() !== '' ? src : null;
 
   return (
-    <div className={`relative overflow-hidden w-full ${aspectRatioClass} bg-stone-100 dark:bg-stone-800/80`}>
-      {/* Skeleton Loading State */}
-      {!isLoaded && !hasError && (
-        <div className="absolute inset-0 img-skeleton flex items-center justify-center">
-          <Sparkles className="w-5 h-5 text-rose-300 dark:text-rose-900/60 animate-pulse" />
+    <div className={`relative w-full overflow-hidden ${aspectRatioClass}`}>
+      {/* Skeleton while loading */}
+      {status === 'loading' && (
+        <div className="absolute inset-0 img-skeleton rounded-inherit" aria-hidden="true" />
+      )}
+
+      {/* Error fallback */}
+      {status === 'error' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--color-bg-subtle)] text-[var(--color-text-light)]">
+          <ImageOff className="w-8 h-8 mb-1 opacity-50" aria-hidden="true" />
+          <span className="text-[10px] opacity-60">No Image</span>
         </div>
       )}
 
-      {/* Fallback Display if Image Fails to Load */}
-      {hasError ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500 text-center">
-          <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-stone-700/60 flex items-center justify-center text-rose-400 dark:text-rose-400/80 mb-2">
-            <ImageOff className="w-5 h-5" />
-          </div>
-          <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-400 line-clamp-1">
-            {alt}
-          </span>
-          <span className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">
-            Showroom Showcase Item
-          </span>
-        </div>
-      ) : (
+      {imgSrc && (
         <img
-          src={src}
+          src={imgSrc}
           alt={alt}
-          loading={loading}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => setHasError(true)}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          } ${className}`}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setStatus('loaded')}
+          onError={() => {
+            // Try fallback, then error
+            if (imgSrc !== FALLBACK_IMG) {
+              setStatus('error');
+            } else {
+              setStatus('error');
+            }
+          }}
+          className={`w-full h-full ${objectFit} transition-opacity duration-300 ${className} ${
+            status === 'loaded' ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ position: status === 'loading' ? 'absolute' : 'relative', inset: 0 }}
         />
       )}
     </div>

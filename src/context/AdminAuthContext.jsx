@@ -5,7 +5,13 @@ const AdminAuthContext = createContext(null);
 const TOKEN_KEY = 'senthoora_admin_token';
 
 export function AdminAuthProvider({ children }) {
-  const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY) || '');
+  const [token, setToken] = useState(() => {
+    const saved = typeof window !== 'undefined' ? sessionStorage.getItem(TOKEN_KEY) || '' : '';
+    if (saved) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${saved}`;
+    }
+    return saved;
+  });
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(token));
   const [loading, setLoading] = useState(false);
 

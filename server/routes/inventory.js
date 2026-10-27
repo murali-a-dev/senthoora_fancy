@@ -6,6 +6,40 @@ import { requireAdmin } from '../middleware/auth.js';
 const router = Router();
 const COLLECTION = 'products';
 
+// High-performance server-side in-memory cache
+let inventoryCache = null;
+let lastCacheTime = 0;
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+export function invalidateInventoryCache() {
+  inventoryCache = null;
+  lastCacheTime = 0;
+}
+
+export async function getCachedInventory(forceFresh = false) {
+  const now = Date.now();
+  if (!forceFresh && inventoryCache && (now - lastCacheTime < CACHE_TTL_MS)) {
+    return inventoryCache;
+  }
+
+  const db = getDb();
+  const snapshot = await db.collection(COLLECTION).get();
+  const items = [];
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    const did = data.did || doc.id;
+    items.push({ id: doc.id, did, ...data });
+  });
+
+  // Sort by createdAt descending or id
+  items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  inventoryCache = items;
+  lastCacheTime = now;
+  return items;
+}
+
 // Helper to strip HTML tags from input
 function sanitizeText(str) {
   if (typeof str !== 'string') return '';
@@ -14,25 +48,19 @@ function sanitizeText(str) {
 
 /**
  * GET /api/inventory
- * Public and Admin listing of products
+ * Public and Admin listing of products with instant in-memory cache
  */
 router.get('/', async (req, res) => {
   try {
-    const db = getDb();
-    const snapshot = await db.collection(COLLECTION).get();
-    const items = [];
+    const forceFresh = req.query.fresh === 'true';
+    const items = await getCachedInventory(forceFresh);
 
-    snapshot.forEach((doc) => {
-      items.push({ id: doc.id, ...doc.data() });
-    });
-
-    // Sort by createdAt descending or id
-    items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     return res.json({
       success: true,
       count: items.length,
       data: items,
+      cached: !forceFresh,
     });
   } catch (err) {
     console.error('Fetch inventory error:', err);
@@ -45,14 +73,27 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
+    const { id } = req.params;
+
+    // Check in-memory cache first for sub-millisecond response
+    if (inventoryCache) {
+      const cachedItem = inventoryCache.find((i) => i.id === id || i.did === id);
+      if (cachedItem) {
+        res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        return res.json({ success: true, data: cachedItem, cached: true });
+      }
+    }
+
     const db = getDb();
-    const doc = await db.collection(COLLECTION).doc(req.params.id).get();
+    const doc = await db.collection(COLLECTION).doc(id).get();
 
     if (!doc.exists) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    return res.json({ success: true, data: { id: doc.id, ...doc.data() } });
+    const data = doc.data();
+    const did = data.did || doc.id;
+    return res.json({ success: true, data: { id: doc.id, did, ...data } });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -91,7 +132,11 @@ router.post('/', requireAdmin, async (req, res) => {
       ? tags.split(',').map((t) => sanitizeText(t)).filter(Boolean)
       : [];
 
+    const db = getDb();
+    const docRef = db.collection(COLLECTION).doc();
+
     const newItem = {
+      did: docRef.id,
       name: cleanedName,
       photo: imageUrl,
       image: imageUrl,
@@ -108,8 +153,8 @@ router.post('/', requireAdmin, async (req, res) => {
       updatedAt: new Date().toISOString(),
     };
 
-    const db = getDb();
-    const docRef = await db.collection(COLLECTION).add(newItem);
+    await docRef.set(newItem);
+    invalidateInventoryCache();
 
     return res.status(201).json({
       success: true,
@@ -141,7 +186,8 @@ router.put('/:id', requireAdmin, async (req, res) => {
     const { name, photo, image, imageId, rate, category, description, featured, badge, stockStatus, tags } = req.body;
 
     const newImageUrl = photo || image || existingData.image || existingData.photo;
-    const numericRate = rate !== undefined && rate !== '' ? Number(rate) : existingData.rate;
+    const rawRate = rate !== undefined && rate !== '' ? Number(rate) : (existingData.rate !== undefined ? Number(existingData.rate) : 0);
+    const validRate = isNaN(rawRate) ? 0 : rawRate;
 
     // Check if image changed and clean up old Cloudinary asset properly
     if (existingData.imageId && imageId && existingData.imageId !== imageId) {
@@ -155,8 +201,8 @@ router.put('/:id', requireAdmin, async (req, res) => {
       photo: newImageUrl,
       image: newImageUrl,
       imageId: imageId !== undefined ? imageId : existingData.imageId,
-      rate: numericRate,
-      rateDisplay: `₹${numericRate.toLocaleString('en-IN')}`,
+      rate: validRate,
+      rateDisplay: req.body.rateDisplay ? sanitizeText(req.body.rateDisplay) : `₹${validRate.toLocaleString('en-IN')}`,
       category: category !== undefined ? sanitizeText(category) : existingData.category,
       description: description !== undefined ? sanitizeText(description) : existingData.description,
       featured: featured !== undefined ? Boolean(featured) : existingData.featured,
@@ -164,11 +210,12 @@ router.put('/:id', requireAdmin, async (req, res) => {
       stockStatus: stockStatus !== undefined ? sanitizeText(stockStatus) : existingData.stockStatus,
       tags: tags !== undefined
         ? (Array.isArray(tags) ? tags.map(sanitizeText).filter(Boolean) : String(tags).split(',').map(sanitizeText).filter(Boolean))
-        : existingData.tags,
+        : (Array.isArray(existingData.tags) ? existingData.tags : []),
       updatedAt: new Date().toISOString(),
     };
 
-    await docRef.update(updatedData);
+    await docRef.set(updatedData, { merge: true });
+    invalidateInventoryCache();
 
     return res.json({
       success: true,
@@ -206,6 +253,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
     }
 
     await docRef.delete();
+    invalidateInventoryCache();
 
     return res.json({
       success: true,

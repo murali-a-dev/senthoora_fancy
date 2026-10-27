@@ -25,7 +25,11 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name and Phone number are required.' });
     }
 
+    const db = getDb();
+    const docRef = db.collection(COLLECTION).doc();
+
     const inquiry = {
+      did: docRef.id,
       name: cleanedName,
       phone: cleanedPhone,
       email: sanitizeText(email),
@@ -36,13 +40,13 @@ router.post('/', async (req, res) => {
       createdAt: new Date().toISOString(),
     };
 
-    const db = getDb();
-    const docRef = await db.collection(COLLECTION).add(inquiry);
+    await docRef.set(inquiry);
 
     return res.status(201).json({
       success: true,
       message: 'Thank you! Your inquiry has been received. Our store team will reach out soon.',
       id: docRef.id,
+      did: docRef.id,
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
@@ -58,7 +62,11 @@ router.get('/', requireAdmin, async (req, res) => {
     const db = getDb();
     const snapshot = await db.collection(COLLECTION).get();
     const list = [];
-    snapshot.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const did = data.did || doc.id;
+      list.push({ id: doc.id, did, ...data });
+    });
 
     list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 

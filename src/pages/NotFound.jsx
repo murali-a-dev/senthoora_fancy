@@ -1,37 +1,40 @@
 import { Link } from 'react-router-dom';
-import { Home, ArrowLeft } from 'lucide-react';
+import { Home, Sparkles } from 'lucide-react'; // ✅ FIX: Removed unused ArrowLeft import
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export default function NotFound() {
+  // ✅ FIX: Set a meaningful page title (was inheriting the default index.html title)
+  usePageMeta('Page Not Found | Sri Senthoora Fancy Store');
+
   return (
-    <div className="min-h-[70vh] flex items-center justify-center p-6 text-center">
-      <div className="max-w-md w-full space-y-6">
-        <div className="w-20 h-20 rounded-3xl bg-rose-50 dark:bg-stone-900 border border-rose-200 dark:border-stone-800 flex items-center justify-center mx-auto text-rose-600 dark:text-rose-400">
-          <span className="font-serif text-3xl font-bold">404</span>
+    <div className="min-h-[72vh] flex items-center justify-center p-6 text-center bg-[var(--color-bg-base)]">
+      <div className="max-w-md w-full space-y-6 animate-fade-in">
+        <div className="w-24 h-24 rounded-3xl bg-[var(--color-primary-light)] border border-[var(--color-border)] flex items-center justify-center mx-auto text-[var(--color-primary)]">
+          <span className="font-serif text-4xl font-black">404</span>
         </div>
 
         <div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100">
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--color-text-main)] m-0">
             Page Not Found
           </h1>
-          <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-2">
-            The showcase page you are looking for does not exist or has been moved.
+          <p className="text-sm text-[var(--color-text-muted)] mt-2 leading-relaxed">
+            The showcase page you're looking for doesn't exist or may have been moved.
+            Return to our storefront to continue browsing.
           </p>
         </div>
 
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-colors shadow-md shadow-[var(--color-primary)]/20"
           >
-            <Home className="w-4 h-4" />
-            <span>Return to Storefront</span>
+            <Home className="w-4 h-4" />Return to Storefront
           </Link>
           <Link
             to="/products"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold text-[var(--color-text-muted)] bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-muted)] border border-[var(--color-border)] transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Browse Products</span>
+            <Sparkles className="w-4 h-4 text-[var(--color-primary)]" />Browse Showcase
           </Link>
         </div>
       </div>

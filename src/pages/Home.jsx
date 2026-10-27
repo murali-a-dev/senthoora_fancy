@@ -1,60 +1,53 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Sparkles,
-  ArrowRight,
-  MessageCircle,
-  MapPin,
-  Clock,
-  ShieldCheck,
-  Crown,
-  Gem,
-  CircleDot,
-  ShoppingBag,
-  Gift,
-  Flame,
+  Sparkles, ArrowRight, MessageCircle, MapPin, Clock,
+  ShieldCheck, Crown, Gem, CircleDot, ShoppingBag, Gift, Flame,
 } from 'lucide-react';
 import { useCompany } from '../context/CompanyContext';
 import { inventoryApi } from '../api/client';
+import { usePageMeta } from '../hooks/usePageMeta';
 import ProductCard from '../components/common/ProductCard';
+import ProductSkeletonCard from '../components/common/ProductSkeletonCard';
 import ProductModal from '../components/common/ProductModal';
 import ImageWithFallback from '../components/common/ImageWithFallback';
 
-const CATEGORY_ICON_MAP = {
-  CircleDot,
-  Gem,
-  Sparkles,
-  Crown,
-  ShoppingBag,
-  Gift,
-  Flame,
-};
+const ICON_MAP = { CircleDot, Gem, Sparkles, Crown, ShoppingBag, Gift, Flame };
 
 export default function Home() {
   const { companyDetails, getWhatsAppUrl } = useCompany();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(''); // FIX: surface errors instead of swallowing them
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // ✅ FIX: Per-page SEO title and meta description
+  usePageMeta(
+    `${companyDetails.shopName} | Bridal Bangles & Jewelry, Erode`,
+    `Discover bridal bangles, antique jewelry, cosmetics and gifts at ${companyDetails.shopName} in ${companyDetails.address?.city || 'Erode'}, Tamil Nadu. Visit our showroom or WhatsApp for inquiries.`
+  );
 
   useEffect(() => {
     async function loadShowcase() {
       try {
         const res = await inventoryApi.getAll();
         if (res.success && Array.isArray(res.data)) {
-          const featured = res.data.filter((item) => item.featured);
+          const featured = res.data.filter((i) => i.featured);
           setFeaturedProducts(featured.length > 0 ? featured.slice(0, 8) : res.data.slice(0, 8));
-
-          // Calculate live product counts per category
           const counts = {};
-          res.data.forEach((item) => {
-            const cat = (item.category || '').toLowerCase();
-            counts[cat] = (counts[cat] || 0) + 1;
+          res.data.forEach((i) => {
+            const c = (i.category || '').toLowerCase();
+            counts[c] = (counts[c] || 0) + 1;
           });
           setCategoryCounts(counts);
+        } else {
+          // ✅ FIX: was 'catch { /* silent */ }' — now surfaces the failure
+          setLoadError('Could not load featured products.');
         }
       } catch (err) {
-        console.error('Failed to load featured products:', err);
+        console.error('Failed to load showcase:', err);
+        setLoadError('Could not connect to the showcase server.');
       } finally {
         setLoading(false);
       }
@@ -64,101 +57,107 @@ export default function Home() {
 
   const showroomHours = companyDetails?.businessHours?.[0]?.hours || '09:30 AM – 09:30 PM';
 
+  // ✅ FIX: guard against missing primaryPhoneRaw (empty tel: link was broken)
+  const primaryPhoneRaw = companyDetails?.contact?.primaryPhoneRaw || '';
+  const primaryPhone = companyDetails?.contact?.primaryPhone || 'Call Us';
+
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-10 pb-16 lg:pt-16 lg:pb-20 bg-stone-50/80 dark:bg-stone-950 border-b border-rose-100/70 dark:border-stone-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            {/* Left Column: Store Branding & Intro */}
+
+      {/* ── Hero ── */}
+      <section
+        className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 bg-gradient-to-br from-[var(--color-bg-base)] via-[var(--color-primary-light)]/30 to-[var(--color-bg-base)] border-b border-[var(--color-border)]"
+      >
+        <div aria-hidden="true" className="absolute top-0 right-0 w-96 h-96 bg-[var(--color-primary-pastel)]/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+
+            {/* Left */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase bg-rose-100/90 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-900 shadow-xs">
-                <Crown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 fill-amber-500/20" aria-hidden="true" />
-                <span>Premier Bridal & Fancy Showcase</span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--color-primary-light)] text-[var(--color-primary)] border border-[var(--color-border)]">
+                <Crown className="w-3.5 h-3.5 text-[var(--color-accent-gold)]" aria-hidden="true" />
+                <span>Premier Bridal &amp; Fancy Showcase</span>
               </div>
 
-              {/* Main Heading */}
-              <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-stone-900 dark:text-stone-50 leading-[1.14]">
+              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--color-text-main)] leading-[1.12]">
                 Adorn Every Moment with{' '}
-                <span className="text-rose-700 dark:text-rose-400">
-                  Timeless Elegance
-                </span>
+                <span className="text-[var(--color-primary)]">Timeless Elegance</span>
               </h1>
 
-              {/* Subtitle */}
-              <p className="text-sm sm:text-base lg:text-lg text-stone-600 dark:text-stone-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Discover an exquisite showcase of bridal bangles, matte gold antique jewelry, cosmetics, clutches, and celebratory return gifts at{' '}
-                <strong className="font-semibold text-stone-900 dark:text-stone-100">{companyDetails.shopName}</strong>.
+              <p className="text-sm sm:text-base lg:text-lg text-[var(--color-text-muted)] max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                Discover an exquisite showcase of bridal bangles, matte gold antique jewelry,
+                cosmetics, clutches, and celebratory gifts at{' '}
+                <strong className="font-semibold text-[var(--color-text-main)]">
+                  {companyDetails.shopName}
+                </strong>.
               </p>
 
-              {/* Showcase CTAs */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3.5 pt-1">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1">
                 <Link
                   to="/products"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-98 transition-all shadow-sm cursor-pointer"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] active:scale-98 transition-all shadow-md shadow-[var(--color-primary)]/25 cursor-pointer"
                 >
-                  <span>Explore Showcase Catalog</span>
+                  <span>Explore Showcase</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-
                 <a
                   href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl text-xs sm:text-sm font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-xs"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-[var(--color-emerald)] bg-[var(--color-emerald-light)] hover:opacity-80 border border-[var(--color-emerald)]/20 transition-opacity cursor-pointer shadow-sm"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp Inquiry</span>
+                  WhatsApp Inquiry
                 </a>
-
                 <Link
                   to="/contact"
-                  className="inline-flex items-center gap-2 px-4 py-3.5 rounded-2xl text-xs sm:text-sm font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-main)] transition-colors"
                 >
-                  <MapPin className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                  <MapPin className="w-4 h-4 text-[var(--color-primary)]" />
                   <span>Visit Showroom</span>
                 </Link>
               </div>
 
-              {/* Live Hours & Trust Indicators */}
-              <div className="pt-6 border-t border-stone-200 dark:border-stone-800 flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6 text-xs text-stone-600 dark:text-stone-400">
+              <div className="pt-5 border-t border-[var(--color-border)] flex flex-wrap items-center justify-center lg:justify-start gap-5 text-xs text-[var(--color-text-light)]">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-                  <span>Showroom Open: {showroomHours}</span>
+                  <Clock className="w-4 h-4 text-[var(--color-emerald)]" aria-hidden="true" />
+                  <span>Open: {showroomHours}</span>
                 </div>
-                <span className="hidden sm:inline" aria-hidden="true">•</span>
+                <span aria-hidden="true" className="hidden sm:block opacity-30">•</span>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
-                  <span>Authentic Quality & Custom Bridal Sizing</span>
+                  <ShieldCheck className="w-4 h-4 text-[var(--color-accent-gold)]" aria-hidden="true" />
+                  <span>Authentic Quality &amp; Custom Bridal Sizing</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Hero Visual Showcase */}
+            {/* Right — Hero Card */}
+            {/* ✅ FIX: Replace hardcoded Unsplash stock photo with the store's own logo/branding card.
+                Replace the src below with an actual store product Cloudinary URL once available. */}
             <div className="lg:col-span-5">
               <div className="relative mx-auto max-w-md lg:max-w-none">
-                <div className="rounded-3xl overflow-hidden shadow-xl border border-rose-100 dark:border-stone-800 bg-white dark:bg-stone-900 group">
+                <div className="rounded-3xl overflow-hidden shadow-2xl border-2 border-[var(--color-border)] bg-[var(--color-bg-surface)] group">
                   <ImageWithFallback
-                    src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80"
-                    alt="Sri Senthoora Bridal Bangle and Jewelry Showcase"
+                    src={companyDetails.logo || '/logo_2.png'}
+                    alt="Sri Senthoora Fancy Store — Bridal Bangle and Jewelry Showcase"
                     aspectRatioClass="aspect-4/3 sm:aspect-square"
-                    className="group-hover:scale-105 transition-transform duration-700"
+                    className="group-hover:scale-105 transition-transform duration-700 object-contain p-8 bg-[var(--color-primary-light)]"
+                    fetchPriority="high"  // ✅ FIX: LCP element gets priority loading hint
                   />
-                  <div className="p-5 bg-white dark:bg-stone-900 border-t border-stone-100 dark:border-stone-800">
+                  <div className="p-5 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-subtle)]">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 block">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)] block">
                           Bridal Boutique Special
                         </span>
-                        <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100 m-0">
-                          Velvet Chuda & Matte Temple Sets
+                        <h2 className="font-serif text-base font-bold text-[var(--color-text-main)] m-0">
+                          Velvet Chuda &amp; Matte Temple Sets
                         </h2>
                       </div>
                       <Link
                         to="/products?category=bangles"
-                        className="p-2 rounded-xl bg-rose-50 dark:bg-stone-800 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-colors"
-                        aria-label="View bridal bangles collection"
+                        className="p-2 rounded-xl bg-[var(--color-primary-light)] text-[var(--color-primary)] hover:bg-[var(--color-primary-pastel)] transition-colors"
+                        aria-label="View bridal bangles"
                       >
                         <ArrowRight className="w-4 h-4" />
                       </Link>
@@ -171,44 +170,48 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Curated Categories Strip */}
-      <section className="py-12 sm:py-16 bg-white dark:bg-stone-900/60 border-b border-rose-100/60 dark:border-stone-800" aria-labelledby="departments-heading">
+      {/* ── Categories ── */}
+      <section
+        className="py-14 sm:py-16 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)]"
+        aria-labelledby="categories-heading"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
               Curated Departments
             </span>
-            <h2 id="departments-heading" className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 mt-1">
+            <h2
+              id="categories-heading"
+              className="font-serif text-2xl sm:text-3xl font-bold text-[var(--color-text-main)] mt-1"
+            >
               Explore by Collection
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-2">
-              Browse our diverse showcase categories designed to accessorize your beauty for weddings, festivals, and celebrations.
+            <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-2">
+              Browse our diverse showcase categories crafted for weddings, festivals, and celebrations.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-5">
-            {companyDetails.categories.filter((c) => c.id !== 'all').map((cat) => {
-              const IconComponent = CATEGORY_ICON_MAP[cat.icon] || Sparkles;
-              const countLabel =
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {/* ✅ FIX: Guard against companyDetails.categories being undefined on first render */}
+            {(companyDetails.categories || []).filter((c) => c.id !== 'all').map((cat) => {
+              const Icon = ICON_MAP[cat.icon] || Sparkles;
+              const count =
                 categoryCounts[cat.id.toLowerCase()] !== undefined
                   ? `${categoryCounts[cat.id.toLowerCase()]} Designs`
                   : `${cat.count} Designs`;
-
               return (
                 <Link
                   key={cat.id}
                   to={`/products?category=${cat.id}`}
-                  className="group p-4 sm:p-5 rounded-2xl bg-stone-50/70 dark:bg-stone-900 border border-stone-200/70 dark:border-stone-800 hover:border-rose-300 dark:hover:border-rose-900 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col items-center text-center"
+                  className="group p-4 sm:p-5 rounded-2xl bg-[var(--color-bg-subtle)] border border-[var(--color-border)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-primary-light)] hover:shadow-md transition-all duration-200 flex flex-col items-center text-center"
                 >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-50 dark:bg-stone-800 group-hover:bg-rose-100 dark:group-hover:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400 transition-colors mb-2.5">
-                    <IconComponent className="w-5 h-5" aria-hidden="true" />
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[var(--color-bg-surface)] group-hover:bg-[var(--color-primary-pastel)] flex items-center justify-center text-[var(--color-primary)] transition-colors mb-3">
+                    <Icon className="w-5 h-5" aria-hidden="true" />
                   </div>
-                  <h3 className="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors m-0">
+                  <h3 className="text-xs sm:text-sm font-bold text-[var(--color-text-main)] group-hover:text-[var(--color-primary)] transition-colors m-0">
                     {cat.name}
                   </h3>
-                  <span className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
-                    {countLabel}
-                  </span>
+                  <span className="text-[11px] text-[var(--color-text-light)] mt-0.5">{count}</span>
                 </Link>
               );
             })}
@@ -216,126 +219,151 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products Showcase */}
-      <section className="py-14 sm:py-16 bg-stone-50/50 dark:bg-stone-950 border-b border-rose-100/60 dark:border-stone-800" aria-labelledby="featured-heading">
+      {/* ── Featured Products ── */}
+      <section
+        className="py-14 sm:py-16 bg-[var(--color-bg-base)] border-b border-[var(--color-border)]"
+        aria-labelledby="featured-heading"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
                 Showroom Highlights
               </span>
-              <h2 id="featured-heading" className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 mt-1">
+              <h2
+                id="featured-heading"
+                className="font-serif text-2xl sm:text-3xl font-bold text-[var(--color-text-main)] mt-1"
+              >
                 Featured Product Showcase
               </h2>
-              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1">
-                A curated glimpse of our most admired bridal bangles, temple jewelry sets, and festive essentials.
+              <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
+                A curated glimpse of our most admired collections.
               </p>
             </div>
             <Link
               to="/products"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 hover:underline shrink-0"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--color-primary)] hover:underline shrink-0"
             >
-              <span>View All Products</span>
-              <ArrowRight className="w-4 h-4" />
+              View All <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-72 rounded-3xl img-skeleton"></div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[1, 2, 3, 4].map((i) => <ProductSkeletonCard key={i} />)}
+            </div>
+          ) : loadError ? (
+            // ✅ FIX: Show error state instead of silent empty screen
+            <div className="text-center py-16 text-[var(--color-text-light)] space-y-2">
+              <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm text-[var(--color-text-muted)]">{loadError}</p>
+              <p className="text-xs">Please check your internet connection or try refreshing.</p>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-16 text-[var(--color-text-light)]">
+              <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">Products will appear here once added via Admin.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onQuickView={(p) => setSelectedProduct(p)}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {featuredProducts.map((p) => (
+                <ProductCard key={p.id} product={p} onQuickView={setSelectedProduct} />
               ))}
             </div>
           )}
         </div>
       </section>
 
-      {/* Why Choose Sri Senthoora Section */}
-      <section className="py-14 sm:py-16 bg-white dark:bg-stone-900/60" aria-labelledby="why-choose-heading">
+      {/* ── Why Choose Us ── */}
+      <section
+        className="py-14 sm:py-16 bg-[var(--color-bg-surface)]"
+        aria-labelledby="why-heading"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
               The Sri Senthoora Experience
             </span>
-            <h2 id="why-choose-heading" className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 mt-1">
+            <h2
+              id="why-heading"
+              className="font-serif text-2xl sm:text-3xl font-bold text-[var(--color-text-main)] mt-1"
+            >
               Why Customers Love Visiting Us
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {companyDetails.highlights.map((item, idx) => (
-              <div
-                key={idx}
-                className="p-6 rounded-3xl bg-stone-50/70 dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-xs flex flex-col justify-between"
-              >
-                <div>
-                  <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-stone-800 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4">
-                    <Sparkles className="w-5 h-5" aria-hidden="true" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {(companyDetails.highlights || []).map((item, idx) => {
+              const Icon = ICON_MAP[item.icon] || Sparkles;
+              return (
+                <div
+                  key={idx}
+                  className="p-6 rounded-3xl bg-[var(--color-bg-subtle)] border border-[var(--color-border)] shadow-[var(--color-card-shadow)] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-[var(--color-primary-light)] flex items-center justify-center text-[var(--color-primary)] mb-4">
+                    <Icon className="w-5 h-5" aria-hidden="true" />
                   </div>
-                  <h3 className="font-serif text-base font-bold text-stone-900 dark:text-stone-100 mb-2 leading-snug">
+                  <h3 className="font-serif text-base font-bold text-[var(--color-text-main)] mb-2 leading-snug">
                     {item.title}
                   </h3>
-                  <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed m-0">
+                  <p className="text-xs text-[var(--color-text-muted)] leading-relaxed m-0">
                     {item.description}
                   </p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* In-Store Showroom Visit Banner */}
-      <section className="py-12 sm:py-14 bg-gradient-to-r from-rose-800 via-rose-700 to-rose-800 text-white">
+      {/* ── CTA Banner ── */}
+      <section className="py-14 sm:py-16 bg-gradient-to-r from-[var(--color-primary-hover)] via-[var(--color-primary)] to-[var(--color-primary-hover)] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 space-y-2.5 text-center lg:text-left">
-              <span className="text-xs font-bold tracking-wider uppercase text-rose-200">
+              <span className="text-xs font-bold tracking-wider uppercase text-white/70">
                 Experience Collections in Person
               </span>
               <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white">
-                Visit Sri Senthoora Fancy Store Today
+                Visit {companyDetails.shopName} Today
               </h2>
-              <p className="text-xs sm:text-sm text-rose-100 max-w-2xl leading-relaxed">
-                Bring your wedding saree or festive attire to our showroom for customized color-matching bangle sets and personalized bridal consultation.
+              <p className="text-sm text-white/80 max-w-2xl leading-relaxed">
+                Bring your wedding saree or festive attire for customized color-matching bangle sets
+                and personalized bridal consultation.
               </p>
             </div>
-
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-center">
               <Link
                 to="/contact"
-                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold text-rose-950 bg-white hover:bg-rose-50 transition-colors shadow-sm"
+                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-[var(--color-primary-hover)] bg-white hover:bg-rose-50 transition-colors shadow-sm"
               >
-                <MapPin className="w-4 h-4 text-rose-600" />
-                <span>Get Store Directions</span>
+                <MapPin className="w-4 h-4" />
+                Get Store Directions
               </Link>
-              <a
-                href={`tel:${companyDetails.contact.primaryPhoneRaw}`}
-                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold text-white bg-rose-900/70 hover:bg-rose-900 border border-white/20 transition-colors"
-              >
-                <span>Call {companyDetails.contact.primaryPhone}</span>
-              </a>
+
+              {/* ✅ FIX: Guard against empty primaryPhoneRaw producing a broken tel: link */}
+              {primaryPhoneRaw ? (
+                <a
+                  href={`tel:${primaryPhoneRaw}`}
+                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-white/15 hover:bg-white/25 border border-white/25 transition-colors"
+                >
+                  Call {primaryPhone}
+                </a>
+              ) : (
+                <Link
+                  to="/contact"
+                  className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-white/15 hover:bg-white/25 border border-white/25 transition-colors"
+                >
+                  Contact Us
+                </Link>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Product Detail Modal */}
       {selectedProduct && (
-        <ProductModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
+        <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
       )}
     </div>
   );

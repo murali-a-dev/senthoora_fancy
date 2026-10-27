@@ -1,15 +1,16 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 import { initFirebase } from './config/firebase.js';
 
 import adminRouter from './routes/admin.js';
-import inventoryRouter from './routes/inventory.js';
+import inventoryRouter, { getCachedInventory } from './routes/inventory.js';
 import uploadRouter from './routes/upload.js';
-import companyRouter from './routes/company.js';
+import companyRouter, { getCachedCompany } from './routes/company.js';
 import inquiryRouter from './routes/inquiry.js';
 
 dotenv.config();
@@ -20,7 +21,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Initialize Firebase / persistent fallback store
+// Initialize Firebase
 initFirebase();
 
 const ALLOWED_ORIGINS = [
@@ -87,22 +88,22 @@ app.use(
 
 app.options('*', cors());
 
+// HTTP Gzip/deflate compression for fast responses
+app.use(compression());
+
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// Response headers for fast updates
+// Response headers: identification
 app.use('/api', (req, res, next) => {
   res.setHeader('X-Powered-By', 'Sri Senthoora Showcase Engine');
-  if (req.method === 'GET') {
-    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
-  }
   next();
 });
 
 // Rate limiting: Protect admin authentication from brute-force attempts
 const adminAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 authentication requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 10 : 100, // Generous in development to prevent lockouts
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -114,7 +115,7 @@ const adminAuthLimiter = rateLimit({
 // Rate limiting: Protect public inquiry endpoint against automated spam
 const inquiryLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // Limit each IP to 10 submissions per minute
+  max: process.env.NODE_ENV === 'production' ? 10 : 60,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -171,4 +172,17 @@ app.use((err, req, res, _next) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌸 Sri Senthoora Fancy Store API running on http://localhost:${PORT}`);
+
+  // Background pre-warming: pre-load inventory and store details so user requests are instant
+  setTimeout(async () => {
+    try {
+      const [inv] = await Promise.all([
+        getCachedInventory().catch((err) => console.warn('[Warmup] Inventory prewarm notice:', err.message)),
+        getCachedCompany().catch((err) => console.warn('[Warmup] Company prewarm notice:', err.message)),
+      ]);
+      console.log(`⚡ Showcase caches pre-warmed (${inv ? inv.length : 0} products ready in memory)`);
+    } catch {
+      // Non-blocking warmup
+    }
+  }, 100);
 });

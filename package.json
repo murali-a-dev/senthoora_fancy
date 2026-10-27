@@ -1,14 +1,15 @@
 {
   "name": "sri-senthoora-fancy-store",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "Modern Product Showcase for Sri Senthoora Fancy Store",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "vite",
-    "dev:server": "nodemon --watch server server/index.js",
+    "dev:server": "nodemon --watch server --ignore \"server/data/**\" server/index.js",
     "build": "vite build",
+    "migrate:did": "node server/scripts/migrate-to-did.js",
     "start": "node server/index.js",
     "preview": "vite preview"
   },
@@ -16,6 +17,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "axios": "^1.7.9",
     "cloudinary": "^2.5.1",
+    "compression": "^1.8.2",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
